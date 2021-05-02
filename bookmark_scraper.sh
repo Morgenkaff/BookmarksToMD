@@ -40,56 +40,22 @@ function get_bookmark_db(){
     
 }
 
-function get_bookmark_folder(){
-
-    echo "Arg1 is: $1"
-
-    # Check to see if there already is set bookmark_folder
-    # (If there is a parent)
-    if [[ $bookmark_folder ]]; then
-    
-        
-    
-        echo "The var bookmark_folder already exists"
-        
-        echo "Saving old bookmark_folder as: $bookmark_folder"
-        old_bookmark_folder=$bookmark_folder
-        
-        echo "The "old" bookmark_folder is now: $old_bookmark_folder"
-        
-        # Get the id of the row where the title is",
-        # the bookmarks folder I want to scrape.
-        bookmark_folder=$(sqlite3 $bookmark_db "SELECT id FROM moz_bookmarks WHERE title='$1' AND parent='$old_bookmark_folder'")
-        
-    else
-    
-        echo "No older bookmark_folder"
-        
-        # Get the id of the entry where the title is $1,
-        # the argument given to this funciton
-        bookmark_folder=$(sqlite3 $bookmark_db "SELECT id FROM moz_bookmarks WHERE title='$1'")
-        
-    fi
-    
-    echo "bookmark_folder is now $bookmark_folder"
-}
-
 # Get subfolders of a bookmark folder. First arg is the DB
 # the second arg is the name of the folder to get subfolders from
 function get_subfolders() {
 
-    get_bookmark_folder "$1"
+    #get_bookmark_folder "$1"
 
-    echo "Getting subfolders of: $1, with id $bookmark_folder"
+    #echo "Getting subfolders of: $1"
 
     # Get the titles of the subfolders from that folder
     # Firefox uses the parameter "parent" to determin "parent folders".
     # Parents are identified by their id, so parent='$bookmark_folder'
     # To only get the folders, and not all the bookmarks, use type='2'.
     # Type 1 is bookmarks, 2 is folders
-    subfolders_str=$(sqlite3 $bookmark_db "SELECT title FROM moz_bookmarks WHERE parent='$bookmark_folder' AND type='2'")
+    subfolders_str=$(sqlite3 $bookmark_db "SELECT id FROM moz_bookmarks WHERE parent='$1' AND type='2'")
     
-#     echo "Subfolders of $1 are $subfolders_str"
+     #echo "Subfolders of $1 are $subfolders_str"
 #     echo "Amount of subfolders of $1 are $subfolders_str"
     
     # "Return" in 1 line
@@ -98,7 +64,7 @@ function get_subfolders() {
     # Return in 2 lines
     string_to_array "$subfolders_str"
     subfolders=("${return_array[@]}")
-    echo "Amount of subfolders of $1 are "${#subfolder[@]}""
+    #echo "Amount of subfolders of $1 are "${#subfolder[@]}""
     
 }
 
@@ -106,23 +72,19 @@ function get_subfolders() {
 # the second arg is the name of the folder to get bookmarks from.
 function get_bookmarks() {
 
-    echo "Getting bookmarks of: $1, in $bookmark_folder"
-    
-    get_bookmark_folder "$1"
-    
-    echo "bookmark_folder is $bookmark_folder"
+    #echo "Getting bookmarks of: $1, in $bookmark_folder"
 
     # Get the titles of the subfolders from that folder
     # Firefox uses the parameter "parent" to determin "parent folders".
     # Parents are identified by their id, so parent='$bookmark_folder'
     # To only get the bookmarks, use type='1'.
     # Type 1 is bookmarks, 2 is folders
-    bookmarks_str=$(sqlite3 $bookmark_db "SELECT title FROM moz_bookmarks WHERE parent='$bookmark_folder' AND type='1'")
+    bookmarks_str=$(sqlite3 $bookmark_db "SELECT id FROM moz_bookmarks WHERE parent='$1' AND type='1'")
     
-    echo "bookmarks_str is $bookmarks_str"
+    #echo "bookmarks_str is $bookmarks_str"
     
     # Reutn in 1 line
-#     booksmarks=$(string_to_array "$bookmarks_str")
+    # booksmarks=$(string_to_array "$bookmarks_str")
     
     # Return in 2 lines
     string_to_array "$bookmarks_str"
@@ -130,17 +92,27 @@ function get_bookmarks() {
     
 }
 
-
-
 function get_bookmark_url(){
 
     #echo "Getting url of: $1"
 
     # Getting the fk (Some kind of internal id for bookmarks across tables)
-    local bookmark_id=$(sqlite3 $bookmark_db "SELECT fk FROM moz_bookmarks WHERE title='$1'")
+    local bookmark_id=$(sqlite3 $bookmark_db "SELECT fk FROM moz_bookmarks WHERE id='$1'")
     
     # Getting the url, based on th fk
     bookmark_url=$(sqlite3 $bookmark_db "SELECT url FROM moz_places WHERE id=${bookmark_id}")
+    
+}
+
+function get_entry_name(){
+
+    entry_name=$(sqlite3 $bookmark_db "SELECT title FROM moz_bookmarks WHERE id=$1")
+    
+}
+
+function get_entry_type(){
+    
+    entry_type=$(sqlite3 $bookmark_db "SELECT type FROM moz_bookmarks WHERE id=$1")
     
 }
 
@@ -153,69 +125,111 @@ function string_to_array() {
 
 }
 
+# Looks for header in given file.
+# Adds a header if it is not there:
+# 'header':
+function add_header() {
+
+    while read y; do
+        if [[ "$1" = $y ]]; then
+            return 0
+        fi
+    done < $2
+    
+    echo -e $1 >> $2
+    
+}
+
+# Adds an entry in form:
+# - 'title'
+#   - 'url'
+function add_bulletpoint() {
+
+    
+    echo "- $1\n  - $2"
+}
+
+function add_to_file() {
+    echo "oo"
+}
+
 # This function prints folders (and their subfolder (recursive) and bookmarks).
 # When there are no more folders, it prints any bookmarks there is in the folder.
 
 function entry_traverse(){
 
-    log 1 "entry_traverse called with arg1 as $1:"
-    echo "$1:\n"
-    
-    log 2 "Parent loop start"
-    local entry
+    log 2 "For loop start"
+    #local entry
     for entry in "$@"; do
     
-        # Code for subfolder traversion -- START
-        get_subfolders "$entry"
+        get_entry_name $entry
+        get_entry_type $entry
+        log 2 "Entry is $entry_name, of type: $entry_type"
         
-        log 2 "Entry is $entry"
-        log 2 "$entry have ${#subfolders[@]} subfolders"
-        
-        # If there are any subfolders
-        if [[ ${#subfolders[@]} > 0 ]]; then
-            log 2 "Subfolders will be printed now:"
+        if [[ $entry_type = 2 ]]; then
             
-            # Tarverse the subfolders
-            echo "$(entry_traverse "${return_array[@]}")\n"
+            # Code for subfolder traversion -- START
             
-            log 2 "Subfolders done printing"
+            get_subfolders "$entry"
             
-#         elif [[ ${#subfolders[@]} == 0 ]]; then
-#             log 2 "Printing name of no subfolder folder:"
-#             echo "$entry:\n"
-        fi
-        # Code for subfolder -- STOP
-        
-        # Code for bookmarks --START
+#             if [[ ${#subfolders[@]} > 0 ]]; then
+#             fi
+            
+            log 1 "$entry_name have ${#subfolders[@]} subfolders:"
+            
+            # If there are any subfolders
+            if [[ ${#subfolders[@]} > 0 ]]; then
+            
+                echo $entry_name
+                
+                # Tarverse the subfolders
+                log 1 "Subfolders will be traversed now:"
+                log 2 "Entry_traverse called on $entry_name:"
+                old_entry=$entry
+                log 2 "old_entry is $old_entry"
+                entry_traverse "${return_array[@]}"
+                entry=$old_entry
+                log 2 "new entry is again $entry"
+                log 2 "Subfolders done printing"
 
-        get_bookmarks "$entry"
+            fi
         
-        log 2 "Entry is $entry"
-        log 2 "$entry have ${#bookmarks[@]} bookmarks"
-        
-        if [[ ${#bookmarks[@]} > 0 ]]; then
-
-            log 2 "Bookmarks will be printed now:"
+            # Code for subfolder -- STOP
             
-            for bookmark in "${bookmarks[@]}"; do
-                echo "|--$bookmark\n"
-            done
+            # Code for bookmarks --START
+            
+            get_bookmarks "$entry"
+            log 1 "$entry_name have ${#bookmarks[@]} bookmarks:"
+            
+            if [[ ${#bookmarks[@]} > 0 ]]; then
+
+                echo $entry_name
+            
+                old_entry=$entry
+                log 2 "old_entry is $old_entry"
+                log 1 "Bookmarks will be traversed now:"
+                log 2 "Entry_traverse called on $entry_name:"
+                entry_traverse "${bookmarks[@]}"
+                entry=$old_entry
+                log 2 "new entry is again $entry"
+            
+            fi
+            
             # Code for bookmarks -- STOP
+            
+        elif [[ $entry_type = 1 ]]; then
         
-        fi
+            
+            get_entry_name $entry
+            get_bookmark_url $entry
+            
+            echo $entry_name
         
+        fi  
+            
 
-    done
-    log 2 "Parent loop done\n"
-    
-## FUNCTION FINISHED
-    
-    # Leftovers:
-    #         
-#         for entry in "${return_array[@]}"; do
-#             entry_traverse $entry
-# 
-#         done
+        done
+        log 2 "For loop done"
     
 }
 
@@ -241,33 +255,7 @@ get_bookmark_db
 
 echo -e "Bookmark DB is: $bookmark_db\n"
 
-#echo -e $(entry_traverse "Ønskeliste")
+bookmark_folder=126
+entry_traverse "$bookmark_folder"
 
-echo "running: get_subfolders "Ønskeliste":"
-get_subfolders "Ønskeliste"
-
-echo "running: get_subfolders "Musik":"
-get_subfolders "Musik"
-echo "running: get_bookmarks "Musik":"
-get_bookmarks "Musik"
-
-
-
-echo "${bookmarks[@]}"
-
-
-# printf -- "%s\n" "$(entry_traverse "Ønskeliste")"
-
-# echo -e "$(entry_traverse "Ønskeliste")"
-
-# New line for clean terminal..
-#printf "\n"
-
-    
-#"SELECT fk FROM moz_bookmarks WHERE title=\"${choice}\""
-
-# 
-# bookmark_id=$(sqlite3 ${BOOKMARKS_PATH} "SELECT fk FROM moz_bookmarks WHERE title=\"${choice}\"")
-# 
-# url=$(sqlite3 ${BOOKMARKS_PATH} "SELECT url FROM moz_places WHERE id=${bookmark_id}")
-# # 
+add_header "## Overskrift 4" "test-file.md"
