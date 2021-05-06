@@ -159,7 +159,7 @@ function add_to_file() {
 function entry_traverse(){
 
     log 2 "For loop start"
-    #local entry
+#     local entry
     for entry in "$@"; do
     
         get_entry_name $entry
@@ -167,21 +167,20 @@ function entry_traverse(){
         log 2 "Entry is $entry_name, of type: $entry_type"
         
         if [[ $entry_type = 2 ]]; then
+        
+        log 2 "Inside 1. if:"
+        old_super_entry=$entry
+        log 2 "old_super_entry is $old_super_entry"
             
             # Code for subfolder traversion -- START
             
             get_subfolders "$entry"
             
-#             if [[ ${#subfolders[@]} > 0 ]]; then
-#             fi
-            
             log 1 "$entry_name have ${#subfolders[@]} subfolders:"
             
-            # If there are any subfolders
+                        # If there are any subfolders
             if [[ ${#subfolders[@]} > 0 ]]; then
             
-                echo $entry_name
-                
                 # Tarverse the subfolders
                 log 1 "Subfolders will be traversed now:"
                 log 2 "Entry_traverse called on $entry_name:"
@@ -203,8 +202,6 @@ function entry_traverse(){
             
             if [[ ${#bookmarks[@]} > 0 ]]; then
 
-                echo $entry_name
-            
                 old_entry=$entry
                 log 2 "old_entry is $old_entry"
                 log 1 "Bookmarks will be traversed now:"
@@ -214,22 +211,30 @@ function entry_traverse(){
                 log 2 "new entry is again $entry"
             
             fi
+        
+            entry=$old_super_entry
+            log 2 "New entry is again $entry"
+            log 2 "Leaving 1. if."
             
             # Code for bookmarks -- STOP
             
         elif [[ $entry_type = 1 ]]; then
         
+#             log 2 "New entry is again $entry"
+            log 2 "Inside 1. elif."
             
             get_entry_name $entry
             get_bookmark_url $entry
             
-            echo $entry_name
+            log 2 "Leaving 1. elif."
         
         fi  
             
 
+        log 2 "For loop return"
         done
         log 2 "For loop done"
+        return 0
     
 }
 
@@ -248,14 +253,11 @@ elif [[ $1 == "-d" ]]; then
     debug=1
 fi
 
-
-
 # Get the bookmark db
 get_bookmark_db
 
 echo -e "Bookmark DB is: $bookmark_db\n"
 
-bookmark_folder=126
+bookmark_folder=792
+log 2 "Bookmark folder is: $bookmark_folder"
 entry_traverse "$bookmark_folder"
-
-add_header "## Overskrift 4" "test-file.md"
