@@ -159,26 +159,24 @@ function add_to_file() {
 function entry_traverse(){
 
     log 2 "For loop start"
-#     local entry
+    local entry
     for entry in "$@"; do
     
         get_entry_name $entry
         get_entry_type $entry
-        log 2 "Entry is $entry_name, of type: $entry_type"
+        log 2 "Entry is $entry_name, id: $entry of type: $entry_type"
         
         if [[ $entry_type = 2 ]]; then
         
-        log 2 "Inside 1. if:"
         old_super_entry=$entry
         log 2 "old_super_entry is $old_super_entry"
             
             # Code for subfolder traversion -- START
-            
             get_subfolders "$entry"
             
             log 1 "$entry_name have ${#subfolders[@]} subfolders:"
             
-                        # If there are any subfolders
+            # If there are any subfolders
             if [[ ${#subfolders[@]} > 0 ]]; then
             
                 # Tarverse the subfolders
@@ -214,19 +212,15 @@ function entry_traverse(){
         
             entry=$old_super_entry
             log 2 "New entry is again $entry"
-            log 2 "Leaving 1. if."
             
             # Code for bookmarks -- STOP
             
         elif [[ $entry_type = 1 ]]; then
         
-#             log 2 "New entry is again $entry"
-            log 2 "Inside 1. elif."
             
             get_entry_name $entry
             get_bookmark_url $entry
             
-            log 2 "Leaving 1. elif."
         
         fi  
             
