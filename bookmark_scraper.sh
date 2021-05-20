@@ -6,15 +6,15 @@ function log(){
 
         # INFO
         if [[ $1 == 1  ]] && [[ $debug == 1 || $verbose == 1 ]]; then
-        echo "INFO: $2\n"
+        echo -e "INFO: $2\n"
         fi
         # DEBUG
         if [[ $1 == 2  ]] && [[ $debug == 1 ]]; then
-        echo "DEBUG: $2\n"
+        echo -e "DEBUG: $2\n"
         fi    
         # ERROR
         if [[ $1 == 3  ]]; then
-        echo "WARNING: $2\n"
+        echo -e "WARNING: $2\n"
         fi
 }
 
@@ -55,7 +55,7 @@ function get_subfolders() {
     # Type 1 is bookmarks, 2 is folders
     subfolders_str=$(sqlite3 $bookmark_db "SELECT id FROM moz_bookmarks WHERE parent='$1' AND type='2'")
     
-     #echo "Subfolders of $1 are $subfolders_str"
+    #echo "Subfolders of $1 are $subfolders_str"
 #     echo "Amount of subfolders of $1 are $subfolders_str"
     
     # "Return" in 1 line
@@ -65,6 +65,8 @@ function get_subfolders() {
     string_to_array "$subfolders_str"
     subfolders=("${return_array[@]}")
     #echo "Amount of subfolders of $1 are "${#subfolder[@]}""
+    
+    echo $subfolders
     
 }
 
@@ -79,7 +81,7 @@ function get_bookmarks() {
     # Parents are identified by their id, so parent='$bookmark_folder'
     # To only get the bookmarks, use type='1'.
     # Type 1 is bookmarks, 2 is folders
-    bookmarks_str=$(sqlite3 $bookmark_db "SELECT id FROM moz_bookmarks WHERE parent='$1' AND type='1'")
+    local bookmarks_str=$(sqlite3 $bookmark_db "SELECT id FROM moz_bookmarks WHERE parent='$1' AND type='1'")
     
     #echo "bookmarks_str is $bookmarks_str"
     
@@ -89,6 +91,8 @@ function get_bookmarks() {
     # Return in 2 lines
     string_to_array "$bookmarks_str"
     bookmarks=("${return_array[@]}")
+    
+    echo $bookmarks
     
 }
 
@@ -106,13 +110,17 @@ function get_bookmark_url(){
 
 function get_entry_name(){
 
-    entry_name=$(sqlite3 $bookmark_db "SELECT title FROM moz_bookmarks WHERE id=$1")
+    local entry_name=$(sqlite3 $bookmark_db "SELECT title FROM moz_bookmarks WHERE id=$1")
+    
+    echo $entry_name
     
 }
 
 function get_entry_type(){
     
-    entry_type=$(sqlite3 $bookmark_db "SELECT type FROM moz_bookmarks WHERE id=$1")
+    local entry_type=$(sqlite3 $bookmark_db "SELECT type FROM moz_bookmarks WHERE id=$1")
+    
+    echo $entry_type
     
 }
 
@@ -156,81 +164,50 @@ function add_to_file() {
 # This function prints folders (and their subfolder (recursive) and bookmarks).
 # When there are no more folders, it prints any bookmarks there is in the folder.
 
-# function entry_traverse(){
-# 
-#     log 2 "For loop start"
-#     local entry
-#     for entry in "$@"; do
-#     
-#         get_entry_name $entry
-#         get_entry_type $entry
-#         log 2 "Entry is $entry_name, id: $entry of type: $entry_type"
-#         
-#         if [[ $entry_type = 2 ]]; then
-#         
-#         old_super_entry=$entry
-#         log 2 "old_super_entry is $old_super_entry"
-#             
-#             # Code for subfolder traversion -- START
-#             get_subfolders "$entry"
-#             
-#             log 1 "$entry_name have ${#subfolders[@]} subfolders:"
-#             
-#             # If there are any subfolders
-#             if [[ ${#subfolders[@]} > 0 ]]; then
-#             
-#                 # Tarverse the subfolders
-#                 log 1 "Subfolders will be traversed now:"
-#                 log 2 "Entry_traverse called on $entry_name:"
-#                 old_entry=$entry
-#                 log 2 "old_entry is $old_entry"
-#                 entry_traverse "${return_array[@]}"
-#                 entry=$old_entry
-#                 log 2 "new entry is again $entry"
-#                 log 2 "Subfolders done printing"
-# 
-#             fi
-#         
-#             # Code for subfolder -- STOP
-#             
-#             # Code for bookmarks --START
-#             
-#             get_bookmarks "$entry"
-#             log 1 "$entry_name have ${#bookmarks[@]} bookmarks:"
-#             
-#             if [[ ${#bookmarks[@]} > 0 ]]; then
-# 
-#                 old_entry=$entry
-#                 log 2 "old_entry is $old_entry"
-#                 log 1 "Bookmarks will be traversed now:"
-#                 log 2 "Entry_traverse called on $entry_name:"
-#                 entry_traverse "${bookmarks[@]}"
-#                 entry=$old_entry
-#                 log 2 "new entry is again $entry"
-#             
-#             fi
-#         
-#             entry=$old_super_entry
-#             log 2 "New entry is again $entry"
-#             
-#             # Code for bookmarks -- STOP
-#             
-#         elif [[ $entry_type = 1 ]]; then
-#         
-#             
-#             get_entry_name $entry
-#             get_bookmark_url $entry
-#             
-#         
-#         fi  
-#             
-# 
-#         log 2 "For loop return"
-#         done
-#         log 2 "For loop done"
-#         return 0
-#     
-# }
+function entry_traverse(){
+    local counter=0
+
+    for entry in "$@"; do
+    counter=$((counter+1))
+        
+            local entry_name=$(get_entry_name "$entry")
+            local entry_type=$(get_entry_type "$entry")
+            local subfolders=$(get_subfolders "$entry")
+            local bookmarks=$(get_bookmarks "$entry")
+            log 1 "Entry is $entry_name, with id: $entry of type: $entry_type\n      It have ${#subfolders[@]} subfolder(s), and ${#bookmarks[@]} bookmark(s)."
+
+                # If there are any subfolders
+                if [[ ${#subfolders[@]} > 0 ]]; then
+                
+                    # Tarverse the subfolders
+                    log 1 "Subfolders will be traversed now:"
+                    
+                    echo 
+                    
+                    log 2 "Subfolders done printing"
+
+                fi
+            
+                # Code for subfolder -- STOP
+                
+                    log 2 "What happened to bookmarks[@]: ${#bookmarks[@]}"
+                # Code for bookmarks --START
+                
+                if [[ ${#bookmarks[@]} > 0 ]]; then
+                log 1 "$counter. entry is a bookmark"
+
+                    old_entry=$entry
+                    log 2 "old_entry is $old_entry"
+                    log 1 "Bookmarks will be traversed now:"
+                    log 2 "Entry_traverse called on $entry_name:"
+                    entry_traverse "${bookmarks[@]}"
+                    entry=$old_entry
+                    log 2 "new entry is again $entry"
+                
+                fi
+                
+    done  
+}
 
 # 
 # # One for writing to the markdown(§future) file (and convert to pdf?)
@@ -253,8 +230,12 @@ get_bookmark_db
 echo -e "Bookmark DB is: $bookmark_db\n"
 
 bookmark_folder=792
-log 2 "Bookmark folder is: $bookmark_folder"
-# entry_traverse "$bookmark_folder"
+log 1 "Bookmark folder is: $bookmark_folder"
+# get_entry_name $bookmark_folder
+# log 2 "Its name is: $entry_name \n"
+entry_traverse "$bookmark_folder"
 
 # Create a temporary logic to traverse the folder to given extend
 # and write the data to a file with the "markdown functions" above
+
+
