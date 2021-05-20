@@ -241,5 +241,3 @@ bookmark_folder=126
 log 1 "Bookmark folder is: $bookmark_folder"
 echo "Choosen bookmark folder:"
 entry_traverse "$bookmark_folder"
-
-
