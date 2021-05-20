@@ -16,10 +16,6 @@ function log(){
         if [[ $1 == 3  ]]; then
         echo -e "WARNING: $2\n"
         fi
-        # Print on scren instead of file
-        if [[ $1 == 4  ]] &&  [[ $print == 1 ]]; then
-        echo -e "PRINT: $2"
-        fi
 }
 
 # # One for reading a config file (§future)?
@@ -110,8 +106,6 @@ function get_bookmark_url(){
     # Getting the url, based on th fk
     bookmark_url=$(sqlite3 $bookmark_db "SELECT url FROM moz_places WHERE id=${bookmark_id}")
     
-    echo $bookmark_url
-    
 }
 
 function get_entry_name(){
@@ -139,34 +133,18 @@ function string_to_array() {
 
 }
 
-# Adds title (name of root folder) to the file
-# in a title formatting
-function add_title() {
-
-    if [[ $print ]]; then
-        log 4 "# $1"
-    else
-        echo -e "# $1\n" > $output_file
-    fi
-}
 # Looks for header in given file.
 # Adds a header if it is not there:
 # 'header':
 function add_header() {
 
-    if [[ $print ]]; then
+    while read y; do
+        if [[ "$1" = $y ]]; then
+            return 0
+        fi
+    done < $2
     
-        log 4 "|$1"
-    else
-
-        while read y; do
-            if [[ "$1" = $y ]]; then
-                return 0
-            fi
-        done < $output_file
-        
-        echo -e "#$1\n" >> $output_file
-    fi
+    echo -e $1 >> $2
     
 }
 
@@ -175,61 +153,20 @@ function add_header() {
 #   - 'url'
 function add_bulletpoint() {
 
-    if [[ $print ]]; then
     
-        log 4 "|$1\n           - $2"
-    else
-
-        while read y; do
-            if [[ "$1" = $y ]]; then
-                return 0
-            fi
-        done < $output_file
-        
-        echo -e "- $1\n       [ Link ]( "$2" )\n" >> $output_file
-    fi
+    echo "- $1\n  - $2"
 }
 
-# Function that 
 function add_to_file() {
-
-
-    
-    echo -e $2 > $1
-}
-
-# Echoes 0 if not empty
-function empty_entry(){
-
-    local entry_type=$(get_entry_type "$1")
-    
-    echo ${#subfolders[@]}
-    echo ${#bookmarks[@]}
-    
-    if [[ ${#subfolders[@]} = 0 && ${#bookmarks[@]} = 0 ]]; then
-    
-        for folder in ${#subfolders[@]}; do
-    
-            if [[ $(empty_entry $folder) == 0 ]]; then
-                echo "1"
-                
-                return
-            fi
-            
-        done
-            
-    else
-    
-        echo "0"
-    fi
+    echo "oo"
 }
 
 # This function prints folders (and their subfolder (recursive) and bookmarks).
 # When there are no more folders, it prints any bookmarks there is in the folder.
+
 function entry_traverse(){
     local counter=0
-    local entry
-    
+
     for entry in "$@"; do
         counter=$((counter+1))
     
@@ -242,62 +179,18 @@ function entry_traverse(){
         get_bookmarks "bookmarks_array" "$entry"
         local bookmarks=("${bookmarks_array[@]}")            
         
-#         log 1 "$counter. entry is $entry_name, with id: $entry of type: $entry_type\n      It have ${#subfolders[@]} subfolder(s), and ${#bookmarks[@]} bookmark(s)."       
+        log 1 "$counter. entry is $entry_name, with id: $entry of type: $entry_type\n      It have ${#subfolders[@]} subfolder(s), and ${#bookmarks[@]} bookmark(s)."
         
-        
-        if [[ $entry_name = $title ]]; then
-        
-            add_title "$entry_name"
             
-        elif [[ $entry_type = 1 ]]; then 
+            if [[ $entry_type = 1 ]]; then 
             
-            log 1 "$counter. entry is $entry_name, a bookmark with id: $entry."
-            
-            if [[ deepness == 1 ]]; then
-            
-                add_header "Blandet"
-            fi
-            
-            add_bulletpoint " $entry_name" $(get_bookmark_url $entry)
-            
-        elif [[ ( $entry_type = 2 ) &&  ( ( ${#subfolders[@]} > 0 ) || ${#bookmarks[@]} > 0) ]]; then
-            
-#             if [[ $(empty_entry $entry) == 0 ]]; then
-#                 log 1 "$entry_name is empty, skipping."
-#                 return
-#             fi
-        
-            log 1 "$counter. entry is $entry_name, a folder with id: $entry.\n      It have ${#subfolders[@]} subfolder(s), and ${#bookmarks[@]} bookmark(s) in it."
-            
-            # Print deepness indicator
-            indic=""
-            __counter=1
+            echo "| |- $entry_name"
+            echo "|"
+            elif [[ $entry_type = 2 ]]; then
 
-            while [[ $__counter < $deepness ]]; do
-                indic+="#"
-                ((__counter++))
-            done
+            echo "|-$entry_name"
             
-            add_header "$indic $entry_name"
-        
-        fi
-        
-        if [[ ${#subfolders[@]} > 0 ]]; then
-        
-        # Code for subfolders --START
-        
-            log 1 "Traversing folders inside $entry_name"
-            deepness=$((deepness+1))
-            log 1 "Deepness is: $deepness (gone up)"
-            
-            entry_traverse ${subfolders[@]}
-    
-            deepness=$((deepness-1))
-            log 1 "Deepness is: $deepness (gone down)"
-    
-        # Code for subfolders -- STOP
-        
-        fi
+            fi
 
         if [[ ${#bookmarks[@]} > 0 ]]; then
         
@@ -310,31 +203,40 @@ function entry_traverse(){
             
         fi
         
-#         log 1 "$counter. loop done."
+        if [[ ${#subfolders[@]} > 0 ]]; then
+        
+        # Code for subfolders --START
+        
+            log 1 "Traversing folders inside $entry_name"
+            entry_traverse ${subfolders[@]}
+    
+        # Code for subfolders -- STOP
+        
+        fi
+        
+        log 1 "$counter. loop done."
                 
-    done
+    done  
 }
 
-# Checking for log mode
+#  ${#bookmarks[@]} ${#subfolders[@]}
+
+# Setup nescessary properties
+# (Reading the config file §future)
+
 if [[ $1 == "-v" ]]; then
     verbose=1
 elif [[ $1 == "-d" ]]; then
     debug=1
-elif [[ $1 == "-p" ]]; then
-    print=1
 fi
 
 # Get the bookmark db
 get_bookmark_db
-log 2 "Bookmark DB is: $bookmark_db"
 
-output_file="test-file.md"
+log 2 "Bookmark DB is: $bookmark_db"
 
 # Testmappe is 972, øsnekliste 126
 bookmark_folder=972
 log 1 "Bookmark folder is: $bookmark_folder"
-# echo "Choosen bookmark folder:"
-title=$(get_entry_name "$bookmark_folder")
-
-deepness=0
+echo "Choosen bookmark folder:"
 entry_traverse "$bookmark_folder"
