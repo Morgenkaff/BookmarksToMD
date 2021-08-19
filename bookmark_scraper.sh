@@ -235,8 +235,8 @@ get_bookmark_db
 
 log 2 "Bookmark DB is: $bookmark_db"
 
-# Testmappe is 972, øsnekliste 126
-bookmark_folder=972
+# Testmappe is 792, øsnekliste 126
+bookmark_folder=792
 log 1 "Bookmark folder is: $bookmark_folder"
 echo "Choosen bookmark folder:"
 entry_traverse "$bookmark_folder"
