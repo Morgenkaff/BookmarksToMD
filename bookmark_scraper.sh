@@ -330,8 +330,8 @@ log 2 "Bookmark DB is: $bookmark_db"
 
 output_file="test-file.md"
 
-# Testmappe is 972, øsnekliste 126
-bookmark_folder=972
+# Testmappe is 792, øsnekliste 378
+bookmark_folder=378
 log 1 "Bookmark folder is: $bookmark_folder"
 # echo "Choosen bookmark folder:"
 title=$(get_entry_name "$bookmark_folder")
