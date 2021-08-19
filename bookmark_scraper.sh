@@ -156,81 +156,81 @@ function add_to_file() {
 # This function prints folders (and their subfolder (recursive) and bookmarks).
 # When there are no more folders, it prints any bookmarks there is in the folder.
 
-# function entry_traverse(){
-# 
-#     log 2 "For loop start"
-#     local entry
-#     for entry in "$@"; do
-#     
-#         get_entry_name $entry
-#         get_entry_type $entry
-#         log 2 "Entry is $entry_name, id: $entry of type: $entry_type"
-#         
-#         if [[ $entry_type = 2 ]]; then
-#         
-#         old_super_entry=$entry
-#         log 2 "old_super_entry is $old_super_entry"
-#             
-#             # Code for subfolder traversion -- START
-#             get_subfolders "$entry"
-#             
-#             log 1 "$entry_name have ${#subfolders[@]} subfolders:"
-#             
-#             # If there are any subfolders
-#             if [[ ${#subfolders[@]} > 0 ]]; then
-#             
-#                 # Tarverse the subfolders
-#                 log 1 "Subfolders will be traversed now:"
-#                 log 2 "Entry_traverse called on $entry_name:"
-#                 old_entry=$entry
-#                 log 2 "old_entry is $old_entry"
-#                 entry_traverse "${return_array[@]}"
-#                 entry=$old_entry
-#                 log 2 "new entry is again $entry"
-#                 log 2 "Subfolders done printing"
-# 
-#             fi
-#         
-#             # Code for subfolder -- STOP
-#             
-#             # Code for bookmarks --START
-#             
-#             get_bookmarks "$entry"
-#             log 1 "$entry_name have ${#bookmarks[@]} bookmarks:"
-#             
-#             if [[ ${#bookmarks[@]} > 0 ]]; then
-# 
-#                 old_entry=$entry
-#                 log 2 "old_entry is $old_entry"
-#                 log 1 "Bookmarks will be traversed now:"
-#                 log 2 "Entry_traverse called on $entry_name:"
-#                 entry_traverse "${bookmarks[@]}"
-#                 entry=$old_entry
-#                 log 2 "new entry is again $entry"
-#             
-#             fi
-#         
-#             entry=$old_super_entry
-#             log 2 "New entry is again $entry"
-#             
-#             # Code for bookmarks -- STOP
-#             
-#         elif [[ $entry_type = 1 ]]; then
-#         
-#             
-#             get_entry_name $entry
-#             get_bookmark_url $entry
-#             
-#         
-#         fi  
-#             
-# 
-#         log 2 "For loop return"
-#         done
-#         log 2 "For loop done"
-#         return 0
-#     
-# }
+function entry_traverse(){
+
+    log 2 "For loop start"
+    local entry
+    for entry in "$@"; do
+    
+        get_entry_name $entry
+        get_entry_type $entry
+        log 2 "Entry is $entry_name, id: $entry of type: $entry_type"
+        
+        if [[ $entry_type = 2 ]]; then
+        
+        old_super_entry=$entry
+        log 2 "old_super_entry is $old_super_entry"
+            
+            # Code for subfolder traversion -- START
+            get_subfolders "$entry"
+            
+            log 1 "$entry_name have ${#subfolders[@]} subfolders:"
+            
+            # If there are any subfolders
+            if [[ ${#subfolders[@]} > 0 ]]; then
+            
+                # Tarverse the subfolders
+                log 1 "Subfolders will be traversed now:"
+                log 2 "Entry_traverse called on $entry_name:"
+                old_entry=$entry
+                log 2 "old_entry is $old_entry"
+                entry_traverse "${return_array[@]}"
+                entry=$old_entry
+                log 2 "new entry is again $entry"
+                log 2 "Subfolders done printing"
+
+            fi
+        
+            # Code for subfolder -- STOP
+            
+            # Code for bookmarks --START
+            
+            get_bookmarks "$entry"
+            log 1 "$entry_name have ${#bookmarks[@]} bookmarks:"
+            
+            if [[ ${#bookmarks[@]} > 0 ]]; then
+
+                old_entry=$entry
+                log 2 "old_entry is $old_entry"
+                log 1 "Bookmarks will be traversed now:"
+                log 2 "Entry_traverse called on $entry_name:"
+                entry_traverse "${bookmarks[@]}"
+                entry=$old_entry
+                log 2 "new entry is again $entry"
+            
+            fi
+        
+            entry=$old_super_entry
+            log 2 "New entry is again $entry"
+            
+            # Code for bookmarks -- STOP
+            
+        elif [[ $entry_type = 1 ]]; then
+        
+            
+            get_entry_name $entry
+            get_bookmark_url $entry
+            
+        
+        fi  
+            
+
+        log 2 "For loop return"
+        done
+        log 2 "For loop done"
+        return 0
+    
+}
 
 # 
 # # One for writing to the markdown(§future) file (and convert to pdf?)
@@ -252,9 +252,9 @@ get_bookmark_db
 
 echo -e "Bookmark DB is: $bookmark_db\n"
 
-bookmark_folder=792
+bookmark_folder=378
 log 2 "Bookmark folder is: $bookmark_folder"
-# entry_traverse "$bookmark_folder"
+entry_traverse "$bookmark_folder"
 
 # Create a temporary logic to traverse the folder to given extend
 # and write the data to a file with the "markdown functions" above
