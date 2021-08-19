@@ -252,7 +252,7 @@ get_bookmark_db
 
 echo -e "Bookmark DB is: $bookmark_db\n"
 
-bookmark_folder=378
+bookmark_folder=792
 log 2 "Bookmark folder is: $bookmark_folder"
 entry_traverse "$bookmark_folder"
 
